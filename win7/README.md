@@ -36,6 +36,10 @@ The unmodified Flutter 3.44.1 control fails on the same Win7 machine with
 component separately passes ten consecutive Win7 runs and Windows CI.
 See [control records](evidence/2026-10-31-controls.json).
 
+The same packaged app also passes first-frame/runtime checks and normal exit
+on Windows Server 2022 in [runtime run 41197415312](https://github.com/zibo-chen/flutter-win7-support/actions/runs/41197415312).
+See its [runtime report](evidence/2026-10-31-win7/modern-runtime.json).
+
 ## Source and build
 
 `build-config.json` pins Flutter's base, the companion Dart commit and

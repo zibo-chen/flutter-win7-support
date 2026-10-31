@@ -38,5 +38,16 @@
     "passed": true,
     "exit_code": 0,
     "forced_close": false
+  },
+  "modern_windows_regression": {
+    "workflow_run": 41197415312,
+    "workflow_commit": "de157db4cf334b65543930c80d40f3ddf85c6609",
+    "job_id": 124526280480,
+    "os": "Windows Server 2022 Datacenter 10.0 (Build 20348)",
+    "same_artifact": true,
+    "runtime_report": "modern-runtime.json",
+    "first_frame": true,
+    "runtime_checks_passed": true,
+    "normal_exit_code": 0
   }
 }
