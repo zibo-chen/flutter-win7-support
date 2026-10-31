@@ -28,6 +28,18 @@ function Checked([string]$Program, [string[]]$Arguments) {
 Checked git @('-C', $FlutterRoot, 'fetch', '--depth=1', 'https://github.com/flutter/flutter.git', "refs/tags/$($config.flutter_version):refs/tags/$($config.flutter_version)")
 $baseRevision = (& git -C $FlutterRoot rev-parse "refs/tags/$($config.flutter_version)^{commit}").Trim()
 if ($baseRevision -ne $config.flutter_base_revision) { throw 'Unexpected upstream Flutter tag' }
+# Older retained SDKs omitted impellerc's source headers. Recover them only
+# when the complete tracked directory is identical to the engine source commit.
+if (!(Test-Path "$EngineOut/shader_lib/flutter/runtime_effect.glsl")) {
+  $shaderRelative = 'engine/src/flutter/impeller/compiler/shader_lib'
+  $sourceTree = (& git -C $FlutterRoot rev-parse "$($manifest.engine_source_commit):$shaderRelative").Trim()
+  if ($LASTEXITCODE -ne 0) { throw 'Cannot verify the engine shader headers' }
+  $checkoutTree = (& git -C $FlutterRoot rev-parse "HEAD:$shaderRelative").Trim()
+  if ($LASTEXITCODE -ne 0 -or $sourceTree -ne $checkoutTree) {
+    throw 'Shader headers do not match the compiled engine source'
+  }
+  Copy-Item "$FlutterRoot/$shaderRelative" "$EngineOut/shader_lib" -Recurse -Force
+}
 # The raw GN strong_platform target always writes flutter_patched_sdk, with
 # dart.vm.product determined by flutter_runtime_mode. Official release archives
 # publish that directory as flutter_patched_sdk_product; local artifacts expect

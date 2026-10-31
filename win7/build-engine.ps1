@@ -75,7 +75,7 @@ foreach ($required in @('flutter_windows.dll', 'flutter_windows.dll.lib', 'flutt
 # A failed acceptance test must not discard an hour of successful compilation.
 $sdkStage = "$root/win7/output/local-engine/host_release"
 New-Item -ItemType Directory -Force $sdkStage | Out-Null
-foreach ($directory in @('dart-sdk', 'flutter_patched_sdk', 'flutter_patched_sdk_product', 'cpp_client_wrapper', 'gen')) {
+foreach ($directory in @('dart-sdk', 'flutter_patched_sdk', 'flutter_patched_sdk_product', 'cpp_client_wrapper', 'shader_lib', 'gen')) {
   if (Test-Path "$out/$directory") {
     Copy-Item "$out/$directory" $sdkStage -Recurse
   }
