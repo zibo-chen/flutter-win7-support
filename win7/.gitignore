@@ -4,3 +4,4 @@ smoke/.dart_tool/
 smoke/coverage/
 smoke/windows/
 smoke/.metadata
+!smoke/pubspec.lock

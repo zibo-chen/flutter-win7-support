@@ -26,12 +26,18 @@ $env:WINDOWSSDKDIR = "${env:ProgramFiles(x86)}/Windows Kits/10"
 Get-PSDrive -PSProvider FileSystem | Select-Object Name,Used,Free | Format-Table
 
 $depot = 'C:/win7-depot-tools'
+$gitExe = (Get-Command git.exe).Source
 if (!(Test-Path "$depot/.git")) {
   Checked git @('init', $depot)
   Checked git @('-C', $depot, 'remote', 'add', 'origin', 'https://chromium.googlesource.com/chromium/tools/depot_tools.git')
 }
 Checked git @('-C', $depot, 'fetch', '--depth=1', 'origin', $config.depot_tools_revision)
 Checked git @('-C', $depot, 'checkout', '--detach', 'FETCH_HEAD')
+# This pinned depot_tools calls git.bat. With self-update disabled its Git
+# bootstrap does not create that wrapper, so explicitly use the runner's Git.
+if (!(Test-Path "$depot/git.bat")) {
+  [IO.File]::WriteAllText("$depot/git.bat", "@`"$gitExe`" %*`r`n", [Text.Encoding]::ASCII)
+}
 $env:PATH = "$depot;$env:PATH"
 Set-Location $root
 Copy-Item 'engine/scripts/standard.gclient' '.gclient'
