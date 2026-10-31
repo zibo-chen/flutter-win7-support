@@ -80,7 +80,7 @@ foreach ($directory in @('dart-sdk', 'flutter_patched_sdk', 'flutter_patched_sdk
     Copy-Item "$out/$directory" $sdkStage -Recurse
   }
 }
-foreach ($pattern in @('*.exe', '*.snapshot', '*.dll', '*.dll.lib', '*.h', '*.dat', 'license*.md', 'args.gn')) {
+foreach ($pattern in @('*.exe', '*.snapshot', '*.dll', '*.dll.lib', '*.dll.exp', '*.dll.pdb', '*.h', '*.dat', 'license*.md', 'args.gn')) {
   Get-ChildItem "$out/$pattern" -File | Copy-Item -Destination $sdkStage
 }
 $engineManifest = [ordered]@{

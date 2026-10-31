@@ -16,6 +16,82 @@ import '../../../src/common.dart';
 import '../../../src/context.dart';
 
 void main() {
+  group('UnpackWindows local engine metadata', () {
+    for (final local in <bool>[false, true]) {
+      for (final missing in <String>[
+        'flutter_windows.dll.exp',
+        'flutter_windows.dll.pdb',
+        'flutter_windows.dll',
+        'flutter_windows.dll.lib',
+      ]) {
+        testWithoutContext('local=$local missing=$missing', () async {
+          final FileSystem fs = MemoryFileSystem.test(style: FileSystemStyle.windows);
+          final artifacts = local
+              ? Artifacts.testLocalEngine(
+                  localEngine: 'out',
+                  localEngineHost: 'out',
+                  fileSystem: fs,
+                )
+              : Artifacts.test(fileSystem: fs);
+          final environment = Environment.test(
+            fs.currentDirectory,
+            artifacts: artifacts,
+            processManager: FakeProcessManager.any(),
+            fileSystem: fs,
+            logger: BufferLogger.test(),
+            defines: <String, String>{kBuildMode: 'release'},
+          );
+          environment.buildDir.createSync(recursive: true);
+          final String source = artifacts.getArtifactPath(
+            Artifact.windowsDesktopPath,
+            platform: TargetPlatform.windows_x64,
+            mode: BuildMode.release,
+          );
+          for (final name in <String>[
+            'flutter_windows.dll',
+            'flutter_windows.dll.exp',
+            'flutter_windows.dll.lib',
+            'flutter_windows.dll.pdb',
+            'flutter_export.h',
+            'flutter_messenger.h',
+            'flutter_plugin_registrar.h',
+            'flutter_texture_registrar.h',
+            'flutter_windows.h',
+          ]) {
+            if (name != missing) {
+              fs.file(fs.path.join(source, name)).createSync(recursive: true);
+            }
+          }
+          fs
+              .directory(
+                artifacts.getArtifactPath(
+                  Artifact.windowsCppClientWrapper,
+                  platform: TargetPlatform.windows_x64,
+                  mode: BuildMode.release,
+                ),
+              )
+              .createSync(recursive: true);
+          fs
+              .file(
+                artifacts.getArtifactPath(Artifact.icuData, platform: TargetPlatform.windows_x64),
+              )
+              .createSync(recursive: true);
+          final Future<void> build = const UnpackWindows(
+            TargetPlatform.windows_x64,
+          ).build(environment);
+          if (local && (missing.endsWith('.exp') || missing.endsWith('.pdb'))) {
+            await build;
+            expect(fs.file(r'C:\windows\flutter\ephemeral\flutter_windows.dll'), exists);
+            expect(fs.file(r'C:\windows\flutter\ephemeral\flutter_windows.dll.lib'), exists);
+            expect(fs.file(fs.path.join(r'C:\windows\flutter\ephemeral', missing)), isNot(exists));
+          } else {
+            await expectLater(build, throwsA(isA<Exception>()));
+          }
+        });
+      }
+    }
+  });
+
   testWithoutContext(
     'UnpackWindows copies files to the correct windows/ cache directory',
     () async {

@@ -86,3 +86,14 @@ can reuse retained SDKs: create/update `win7/package-request.json` with
 `source_run_id`, its full `source_commit`, and a `request_id` to trigger
 `win7-package.yml`. The package job verifies the source run and artifact
 manifest, then builds the app without compiling the engine again.
+
+Run `41186401142` also passes the complete probe with the source-built Dart
+3.12.1 SDK and retains the compiled engine. Application packaging uses that
+matched SDK; a successful compile alone does not establish Win7 compatibility.
+
+Redistributed local engines may omit the DLL's `.exp` export metadata and
+`.pdb` debug symbols. The Windows unpack target accepts their absence only
+with local artifacts. The DLL, import library, headers and ICU data remain
+required, and downloaded SDK validation stays strict. New source archives
+retain these metadata files when available. Targeted tests cover the optional
+local metadata and required runtime/link files.
