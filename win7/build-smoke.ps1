@@ -64,6 +64,18 @@ Copy-Item "$FlutterRoot/win7/smoke" $app -Recurse
 Checked "$FlutterRoot/bin/flutter.bat" @('config', '--no-analytics')
 Checked "$FlutterRoot/bin/flutter.bat" @('--version')
 Checked "$FlutterRoot/bin/flutter.bat" @('create', '--empty', '--platforms=windows', '--project-name=win7_smoke', '--no-pub', $app)
+# Keep the minimal acceptance executable self-contained, like the engine.
+# Production plugins must choose and validate their own CRT distribution.
+$cmakePath = "$app/windows/CMakeLists.txt"
+$cmake = [IO.File]::ReadAllText($cmakePath)
+$projectLine = 'project(win7_smoke LANGUAGES CXX)'
+if (!$cmake.Contains($projectLine)) { throw 'Unexpected Windows project template' }
+$staticRuntime = @'
+cmake_policy(SET CMP0091 NEW)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+project(win7_smoke LANGUAGES CXX)
+'@
+[IO.File]::WriteAllText($cmakePath, $cmake.Replace($projectLine, $staticRuntime))
 Set-Location $app
 Checked "$FlutterRoot/bin/flutter.bat" @('pub', 'get')
 $engineSource = Split-Path (Split-Path $EngineOut -Parent) -Parent
@@ -78,6 +90,7 @@ Copy-Item 'build/windows/x64/runner/Release' $OutputDirectory -Recurse
   framework_checkout_commit = (& git -C $FlutterRoot rev-parse HEAD).Trim()
   dart_commit = $manifest.dart_commit
   target = $manifest.target
+  runner_crt = 'static'
   compatibility_status = 'unverified'
   build_utc = [DateTime]::UtcNow.ToString('o')
 } | ConvertTo-Json | Set-Content "$OutputDirectory/build-manifest.json" -Encoding utf8
