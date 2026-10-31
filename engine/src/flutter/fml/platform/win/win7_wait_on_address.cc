@@ -113,6 +113,19 @@ void WINAPI WakeByAddressFallback(PVOID address) {
 // pointers. Supply them in this source_set so linking cannot pull those
 // entries from Synchronization.lib. Normal builds never compile this file.
 extern "C" {
+// Some Windows SDK headers emit direct calls instead of dllimport references.
+BOOL WINAPI WaitOnAddress(volatile VOID* address,
+                          PVOID expected,
+                          SIZE_T size,
+                          DWORD timeout) {
+  return WaitCompatible(address, expected, size, timeout);
+}
+void WINAPI WakeByAddressSingle(PVOID address) {
+  WakeOneCompatible(address);
+}
+void WINAPI WakeByAddressAll(PVOID address) {
+  WakeAllCompatible(address);
+}
 NativeWait __imp_WaitOnAddress = WaitCompatible;
 NativeWake __imp_WakeByAddressSingle = WakeOneCompatible;
 NativeWake __imp_WakeByAddressAll = WakeAllCompatible;

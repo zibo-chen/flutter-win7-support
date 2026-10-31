@@ -65,6 +65,7 @@ jobs:
           path: win7/smoke/build/windows/x64/runner/Release/
           if-no-files-found: error
   engine:
+    needs: native-compat
     runs-on: windows-2022
     timeout-minutes: 350
     steps:
