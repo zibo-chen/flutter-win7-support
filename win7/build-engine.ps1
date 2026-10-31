@@ -20,8 +20,10 @@ New-Item -ItemType Directory -Force "$root/win7/output" | Out-Null
 # The Flutter CLI derives its semantic version from tags even on a fork.
 # Fetch and verify the real upstream tag, rather than reporting an unknown SDK.
 Checked git @('-C', $root, 'fetch', '--depth=1', 'https://github.com/flutter/flutter.git', "refs/tags/$($config.flutter_version):refs/tags/$($config.flutter_version)")
-$baseRevision = (& git -C $root rev-parse "refs/tags/$($config.flutter_version)^{commit}").Trim()
-if ($baseRevision -ne $config.flutter_base_revision) { throw "Unexpected Flutter base $baseRevision" }
+# depot_tools/git.bat invokes cmd.exe, which consumes the revision caret.
+# Call the executable directly to preserve the annotated-tag peeling syntax.
+$baseRevision = (& git.exe -C $root rev-parse --verify "refs/tags/$($config.flutter_version)^{commit}").Trim()
+if ($LASTEXITCODE -ne 0 -or $baseRevision -ne $config.flutter_base_revision) { throw "Unexpected Flutter base $baseRevision" }
 $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
 $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if (!$vs) { throw 'Visual Studio C++ toolchain not found' }

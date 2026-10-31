@@ -26,8 +26,10 @@ function Checked([string]$Program, [string[]]$Arguments) {
 }
 
 Checked git @('-C', $FlutterRoot, 'fetch', '--depth=1', 'https://github.com/flutter/flutter.git', "refs/tags/$($config.flutter_version):refs/tags/$($config.flutter_version)")
-$baseRevision = (& git -C $FlutterRoot rev-parse "refs/tags/$($config.flutter_version)^{commit}").Trim()
-if ($baseRevision -ne $config.flutter_base_revision) { throw 'Unexpected upstream Flutter tag' }
+# depot_tools/git.bat invokes cmd.exe, which consumes the revision caret.
+# Call the executable directly to preserve the annotated-tag peeling syntax.
+$baseRevision = (& git.exe -C $FlutterRoot rev-parse --verify "refs/tags/$($config.flutter_version)^{commit}").Trim()
+if ($LASTEXITCODE -ne 0 -or $baseRevision -ne $config.flutter_base_revision) { throw 'Unexpected upstream Flutter tag' }
 # Older retained SDKs omitted impellerc's source headers. Recover them only
 # when the complete tracked directory is identical to the engine source commit.
 if (!(Test-Path "$EngineOut/shader_lib/flutter/runtime_effect.glsl")) {
