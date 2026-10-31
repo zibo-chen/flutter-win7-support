@@ -52,3 +52,8 @@ Comparing its named imports with exports available on that machine identified:
 `GetCurrentThreadStackLimits`, `WaitOnAddress`, and `WakeByAddressSingle`.
 Ordinal imports were excluded from this comparison. This establishes the
 negative control only; source-build and patched-engine results are pending.
+
+The native address-wait executable from run `41180227958` passes on Windows
+2022 CI and on the Win7 machine for 10 consecutive runs, all with exit code 0.
+This validates that component only; the full Flutter engine remains pending.
+See [recorded controls](evidence/2026-10-31-controls.json) for hashes and limits.

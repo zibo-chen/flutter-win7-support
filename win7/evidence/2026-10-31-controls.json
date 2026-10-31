@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-31",
+  "test_os": "Windows 7 SP1 x64 (6.1.7601)",
+  "gpu": "Intel HD Graphics 3000",
+  "stock_control": {
+    "flutter": "3.44.1",
+    "workflow_run": 41178761812,
+    "source_commit": "47c0490712adbefdb72c45ceac92d02286a37015",
+    "archive_sha256": "123e635536174f60f3b2e5b51430961146d2b44307f61afc566bf1144caa4667",
+    "dll_subsystem": "10.0",
+    "load_library_error": 127,
+    "exit_code": -1073741511,
+    "exit_code_hex": "0xc0000139",
+    "first_frame_report": false,
+    "missing_named_imports": [
+      "GetHostNameW",
+      "PathAllocCanonicalize",
+      "PathCchRemoveFileSpec",
+      "PathCchCombineEx",
+      "RtlAddGrowableFunctionTable",
+      "RtlDeleteGrowableFunctionTable",
+      "GetCurrentThreadStackLimits",
+      "WaitOnAddress",
+      "WakeByAddressSingle"
+    ]
+  },
+  "native_wait_test": {
+    "workflow_run": 41180227958,
+    "source_commit": "0598e1c07b2cb11a2a8dd6b1c7ab29bc7de9328e",
+    "artifact_id": 13034089320,
+    "archive_sha256": "825084847a05459ccb372561e43ce15ab1dd775778d63061d88e458ff61d458d",
+    "exe_sha256": "bf425c3b626d6a6b1f87f6d7bef1973c0accef8580fe248faeaab3b5af3732d8",
+    "windows_ci": "passed",
+    "win7_iterations": 10,
+    "win7_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "checks": [
+      "changed value returns immediately",
+      "zero timeout",
+      "invalid size",
+      "1/2/4/8-byte comparisons",
+      "eight waiters wake and complete",
+      "STL atomic wait/notify"
+    ]
+  },
+  "limitations": [
+    "Full source-built engine baseline still building",
+    "Complete patched Flutter application still building; no positive first-frame proof yet",
+    "Keyboard/IME, graphics performance, camera, recognition, printing and arbitrary plugins not accepted"
+  ]
+}
