@@ -40,5 +40,11 @@
     "One physical Win7 SP1 x64 touchscreen",
     "No physical Windows 10/11 acceptance",
     "No long-running stability or full business workflow acceptance"
-  ]
+  ],
+  "modern_windows_control": {
+    "run": 41226559809,
+    "package_run": 41225487377,
+    "outcome": "success",
+    "host": "Windows Server 2022"
+  }
 }
