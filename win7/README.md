@@ -83,8 +83,11 @@ coordinates and stable IDs, closes each consumed touch handle, and suppresses
 duplicate promoted mouse events. If registration fails, promoted mouse input
 remains available for basic taps. Windows 8+ retains `WM_POINTER`. Native
 regression tests cover routing, multiple contacts, negative/fractional
-coordinates, registration failure and handle ownership. Physical touchscreen
-acceptance of this new path is pending a rebuilt engine on the Win7 device.
+coordinates, registration failure and handle ownership. On the Win7 device,
+real finger input reached the native helper, and a bakery release app using the
+rebuilt engine responded to finger taps and scrolling (user-confirmed). This
+validates basic touch input; it does not establish business workflow or
+long-running stability acceptance. See `evidence/2026-11-01-touch.json`.
 
 The initial scope is Win7 SP1 **x64 release applications** built on newer
 Windows. Win7 development tools and x86 are outside this scope. Chinese IME
