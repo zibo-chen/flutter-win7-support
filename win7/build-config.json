@@ -1,9 +1,11 @@
 {
   "flutter_version": "3.44.1",
   "flutter_base_revision": "924134a44c189315be2148659913dda1671cbe99",
-  "dart_revision": "fc3da898ea1664b8a8633f6ec03d2c2290bb3d01",
+  "dart_base_revision": "fc3da898ea1664b8a8633f6ec03d2c2290bb3d01",
+  "dart_revision": "fc564ed5007c128fd21ff6b3c9f6422e14d0be3c",
+  "dart_repository": "https://github.com/zibo-chen/dart-sdk-win7-support.git",
   "depot_tools_revision": "580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7",
-  "variant": "baseline",
+  "variant": "win7-experimental",
   "target": "windows-x64-release",
   "minimum_test_os": "Windows 7 SP1 x64"
 }

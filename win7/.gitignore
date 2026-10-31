@@ -1,4 +1,5 @@
 output/
+native-output/
 smoke/build/
 smoke/.dart_tool/
 smoke/coverage/

@@ -7,10 +7,36 @@ on:
       - win7/build-config.json
       - win7/build-engine.ps1
       - win7/ci-trigger.txt
+      - engine/src/build/config/win/**
+      - engine/src/flutter/fml/platform/win/win7_wait_on_address.*
+      - win7/native_wait_test.cc
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
+  native-compat:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test native address wait compatibility
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $devcmd = Join-Path $vs 'Common7\Tools\VsDevCmd.bat'
+          cmd /c "`"$devcmd`" -arch=x64 -host_arch=x64 >nul && set" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') { [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], 'Process') }
+          }
+          New-Item -ItemType Directory -Force win7/native-output | Out-Null
+          cl /nologo /EHsc /std:c++20 /MT /D_WIN32_WINNT=0x0A00 /Iengine/src engine/src/flutter/fml/platform/win/win7_wait_on_address.cc win7/native_wait_test.cc /Fewin7/native-output/native_wait_test.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & .\win7\native-output\native_wait_test.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-wait-compat-windows-x64
+          path: win7/native-output/native_wait_test.exe
+          if-no-files-found: error
   stock-smoke:
     runs-on: windows-2022
     timeout-minutes: 30

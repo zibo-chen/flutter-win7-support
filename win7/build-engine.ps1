@@ -41,22 +41,33 @@ if (!(Test-Path "$depot/git.bat")) {
 $env:PATH = "$depot;$env:PATH"
 Set-Location $root
 Copy-Item 'engine/scripts/standard.gclient' '.gclient'
+if ($config.variant -eq 'win7-experimental') {
+  $gclient = Get-Content '.gclient' -Raw
+  $dependency = '"custom_deps": {"engine/src/flutter/third_party/dart": "' + $config.dart_repository + '@' + $config.dart_revision + '"}'
+  $gclient.Replace('"custom_deps": {}', $dependency) | Set-Content '.gclient' -Encoding utf8
+} elseif ($config.variant -ne 'baseline') {
+  throw "Unknown build variant: $($config.variant)"
+}
 # gclient sync must leave our pinned Flutter checkout untouched.
 Checked 'gclient.bat' @('sync', '--no-history', '--shallow', '--jobs', '4')
 $dart = "$root/engine/src/flutter/third_party/dart"
 $dartRevision = (& git -C $dart rev-parse HEAD).Trim()
 if ($dartRevision -ne $config.dart_revision) { throw "Unexpected Dart revision $dartRevision" }
-if ($config.variant -ne 'baseline') {
-  throw 'Patched builds require a pinned compatibility patch set; no silent baseline fallback.'
-}
 
 Set-Location "$root/engine/src"
-Checked python @('flutter/tools/gn', '--runtime-mode=release', '--no-prebuilt-dart-sdk', '--no-lto', '--no-enable-unittests', '--no-build-embedder-examples', '--no-build-glfw-shell')
+$gnArguments = @('flutter/tools/gn', '--runtime-mode=release', '--no-prebuilt-dart-sdk', '--no-lto', '--no-enable-unittests', '--no-build-embedder-examples', '--no-build-glfw-shell')
+if ($config.variant -eq 'win7-experimental') {
+  $gnArguments += '--gn-args=flutter_win7_compatibility=true'
+}
+Checked python $gnArguments
 # Build the desktop SDK and compiler, excluding unrelated engine test/tool targets.
-Checked ninja @('-C', 'out/host_release', '-j', "$Jobs", 'flutter/shell/platform/windows:windows', 'flutter/lib/snapshot:generate_snapshot_bins', 'flutter/build/dart:dart_sdk', 'flutter/flutter_frontend_server:frontend_server')
+Checked ninja @('-C', 'out/host_release', '-j', "$Jobs", 'flutter/shell/platform/windows:windows', 'flutter/lib/snapshot:generate_snapshot_bins', 'flutter/build/dart:dart_sdk', 'flutter/flutter_frontend_server:frontend_server', 'flutter/tools/font_subset', 'flutter/tools/const_finder')
 $out = "$root/engine/src/out/host_release"
 foreach ($required in @('flutter_windows.dll', 'flutter_windows.dll.lib', 'flutter_windows.h', 'gen_snapshot.exe', 'icudtl.dat')) {
   if (!(Test-Path "$out/$required")) { throw "Missing engine output: $required" }
+}
+if ($config.variant -eq 'win7-experimental') {
+  Checked "$out/dart-sdk/bin/dart.exe" @("$dart/tests/standalone/io/windows_7_compatibility_test.dart")
 }
 
 Set-Location $root
@@ -73,6 +84,7 @@ $manifest = [ordered]@{
   flutter_version = $config.flutter_version
   flutter_commit = (& git -C $root rev-parse HEAD).Trim()
   dart_commit = $dartRevision
+  dart_base_commit = $config.dart_base_revision
   depot_tools_commit = $config.depot_tools_revision
   target = $config.target
   compatibility_status = 'unverified'
