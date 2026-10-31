@@ -1,0 +1,40 @@
+{
+  "source_build": {
+    "workflow_run": 41180227958,
+    "engine_job": 124476068288,
+    "engine_source_commit": "0598e1c07b2cb11a2a8dd6b1c7ab29bc7de9328e",
+    "dart_commit": "fc564ed5007c128fd21ff6b3c9f6422e14d0be3c",
+    "compile_and_link": "passed",
+    "ninja_steps_completed": 6611,
+    "runtime_probe": "failed at relative directory link read, errno123",
+    "full_flutter_app": "not built because runtime probe failed"
+  },
+  "official_dart_control": {
+    "workflow_run": 41186016069,
+    "dart_version": "3.12.1 stable windows_x64",
+    "relative_target_forward_slash": "fails with errno123",
+    "relative_target_native_backslash": "passes"
+  },
+  "next_candidate": "Correct fixture to native Windows separators; save complete matched local-engine SDK before acceptance tests; gate source build on official runtime probe.",
+  "compatibility_status": "Full patched Flutter runtime on Win7 remains unverified",
+  "unmodified_source_baseline": {
+    "workflow_run": 41179006107,
+    "engine_job": 124472367237,
+    "source_commit": "97cb215eadf55b3142efd4ab60c2e3fedb71d89c",
+    "compile_and_link": "passed",
+    "ninja_steps_completed": 6534,
+    "application_packaging": "failed: Flutter refuses project creation inside SDK checkout",
+    "fix": "Build the fixture in a short, disposable directory outside FlutterRoot; package existing compiled SDK separately."
+  },
+  "corrected_candidate": {
+    "workflow_run": 41186401142,
+    "source_commit": "7cb7b91d25a4376334ce186fbbc58bd92d4c743d",
+    "dart_commit": "a6ed413da4b5690ec3e05f347af1400170d2a2f3",
+    "engine_compile_and_link": "passed all6611steps",
+    "source_built_dart_probe": "passed on Windows2022",
+    "packaging_failure": "old in-SDK project creation step",
+    "retained_sdk_artifact": 13040132846,
+    "artifact_sha256": "1a7211def4d8b78707de08357a87ab8632a007f3f8b57a4f6263ea6dd649128c",
+    "next": "Package retained SDK with external-project helper"
+  }
+}

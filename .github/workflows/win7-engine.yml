@@ -1,0 +1,117 @@
+name: Windows 7 engine acceptance
+on:
+  push:
+    branches: [medivh/win7-3.44.1]
+    paths:
+      - win7/build-config.json
+      - win7/ci-trigger.txt
+      - engine/src/build/config/win/**
+      - engine/src/flutter/fml/BUILD.gn
+      - engine/src/flutter/fml/platform/win/win7_wait_on_address.*
+      - win7/native_wait_test.cc
+      - win7/native_touch_test.cc
+      - engine/src/flutter/shell/platform/windows/flutter_window.*
+      - engine/src/flutter/shell/platform/windows/win7_touch_input.h
+      - engine/src/flutter/shell/platform/windows/BUILD.gn
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-compat:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test native address wait compatibility
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $devcmd = Join-Path $vs 'Common7\Tools\VsDevCmd.bat'
+          cmd /c "`"$devcmd`" -arch=x64 -host_arch=x64 >nul && set" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') { [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], 'Process') }
+          }
+          New-Item -ItemType Directory -Force win7/native-output | Out-Null
+          cl /nologo /EHsc /std:c++20 /MT /D_WIN32_WINNT=0x0A00 /Iengine/src engine/src/flutter/fml/platform/win/win7_wait_on_address.cc win7/native_wait_test.cc /Fewin7/native-output/native_wait_test.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & .\win7\native-output\native_wait_test.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cl /nologo /EHsc /std:c++17 /MT /D_WIN32_WINNT=0x0601 /Iengine/src win7/native_touch_test.cc /Fewin7/native-output/native_touch_test.exe /link user32.lib
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & .\win7\native-output\native_touch_test.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-wait-compat-windows-x64
+          path: win7/native-output/*.exe
+          if-no-files-found: error
+  stock-smoke:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+      - name: Create, test, and build stock control
+        shell: pwsh
+        run: |
+          $config = Get-Content win7/build-config.json -Raw | ConvertFrom-Json
+          if ($config.variant -eq 'win7-experimental') {
+            $probe = Join-Path $env:RUNNER_TEMP 'windows_7_compatibility_test.dart'
+            Invoke-WebRequest "https://raw.githubusercontent.com/zibo-chen/dart-sdk-win7-support/$($config.dart_revision)/tests/standalone/io/windows_7_compatibility_test.dart" -OutFile $probe
+            dart $probe
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+          flutter create --empty --platforms=windows --project-name=win7_smoke --no-pub win7/smoke
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Set-Location win7/smoke
+          flutter pub get
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          flutter test --coverage
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          flutter build windows --release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stock-smoke-windows-x64
+          path: win7/smoke/build/windows/x64/runner/Release/
+          if-no-files-found: error
+  engine:
+    needs: [native-compat, stock-smoke]
+    runs-on: windows-2022
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
+      - name: Prepare short source path
+        shell: pwsh
+        run: |
+          git config --system core.longpaths true
+          git clone --no-hardlinks --local $env:GITHUB_WORKSPACE C:\f
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          git -C C:\f remote set-url origin https://github.com/${{ github.repository }}.git
+          'FLUTTER_WIN7_SOURCE=C:\f' | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Build pinned engine and acceptance app
+        shell: pwsh
+        working-directory: C:\f
+        run: .\win7\build-engine.ps1
+      - name: Upload engine and application
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-acceptance-windows-x64
+          path: C:/f/win7/output/
+          if-no-files-found: warn
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-build-diagnostics
+          path: |
+            C:/f/engine/src/out/host_release/args.gn
+            C:/f/engine/src/out/host_release/.ninja_log
+            C:/f/win7/build-config.json
+          if-no-files-found: ignore

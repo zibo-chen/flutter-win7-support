@@ -1,0 +1,50 @@
+{
+  "engine_source_commit": "5d0e0da045303b0c090edcc474a955590b19af24",
+  "dart_commit": "a6ed413da4b5690ec3e05f347af1400170d2a2f3",
+  "source_run": 41215575173,
+  "source_artifact_id": 13052110143,
+  "source_artifact_zip_sha256": "3c34a328ccf833d52a8986a038b9d760ad0f02c4aafe50910afdf5e5aa039bab",
+  "source_run_outcome": "Engine linked; downstream packaging failed because depot_tools/git.bat consumed the tag revision caret. SDK retained.",
+  "engine_dll_sha256": "ca36f299459568ebcd9879613600b625e9bb9ac0433ce0ac8635e3b7b89908b3",
+  "packaging_recovery": {
+    "source_commit": "d3e342c3b92481ff5be6094b927a61a30996c104",
+    "run": 41225487377,
+    "outcome": "success; reused source SDK without recompiling"
+  },
+  "win7": {
+    "os": "Windows 7 SP1 x64",
+    "gpu": "Intel HD Graphics 3000",
+    "native_helper_regression": "passed on Win7 and Windows build node",
+    "physical_native_probe": {
+      "finger_input_confirmed": true,
+      "down": 32,
+      "move": 516,
+      "up": 32,
+      "wm_touch_messages": 580,
+      "legacy_registration": true
+    },
+    "minimal_old_aot_new_engine": {
+      "runtime_and_first_frame": true,
+      "keyboard_text": "Win7-input-123",
+      "button_clicks": 1,
+      "exit_code": 0
+    },
+    "bakery_app_touch": {
+      "source": "User physical acceptance",
+      "finger_taps": "passed",
+      "finger_scrolling": "passed",
+      "scope": "Basic input only. A separate nested developer-dialog cancellation defect in the app caused a black screen; reproduced in widget tests and being repaired in the app."
+    }
+  },
+  "limits": [
+    "One physical Win7 SP1 x64 touchscreen",
+    "No physical Windows 10/11 acceptance",
+    "No long-running stability or full business workflow acceptance"
+  ],
+  "modern_windows_control": {
+    "run": 41226559809,
+    "package_run": 41225487377,
+    "outcome": "success",
+    "host": "Windows Server 2022"
+  }
+}

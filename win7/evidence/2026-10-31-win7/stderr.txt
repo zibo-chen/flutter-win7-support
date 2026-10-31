@@ -1,0 +1,1 @@
+[ERROR:flutter/shell/platform/windows/direct_manipulation.cc(182)] CoCreateInstance(CLSID_DirectManipulationManager, nullptr, CLSCTX_INPROC_SERVER, IID_IDirectManipulationManager, &manager_) failed

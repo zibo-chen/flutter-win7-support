@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/config/win/visual_studio_version.gni")
+import("//build/config/win/win7_compatibility.gni")
 
 # Compiler setup for the Windows SDK. Applied to all targets.
 config("sdk") {
@@ -114,6 +115,9 @@ config("common_linker_setup") {
 # This is appended to the subsystem to specify a minimum version.
 # The number after the comma is the minimum required OS version.
 subsystem_version_suffix = ",10.0"
+if (flutter_win7_compatibility) {
+  subsystem_version_suffix = ",6.1"
+}
 
 config("console") {
   ldflags = [ "/SUBSYSTEM:CONSOLE$subsystem_version_suffix" ]

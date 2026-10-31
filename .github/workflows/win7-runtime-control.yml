@@ -1,0 +1,26 @@
+name: Windows Dart runtime control
+on:
+  push:
+    branches: [medivh/win7-3.44.1]
+    paths:
+      - .github/workflows/win7-runtime-control.yml
+      - win7/runtime-control.dart
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  official-dart:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+      - name: Compare relative link separators using official Dart
+        shell: pwsh
+        run: |
+          dart win7/runtime-control.dart
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }

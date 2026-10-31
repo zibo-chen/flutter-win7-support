@@ -8,6 +8,9 @@ import("//flutter/testing/testing.gni")
 if (is_fuchsia) {
   import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 }
+if (is_win) {
+  import("//build/config/win/win7_compatibility.gni")
+}
 
 source_set("fml") {
   sources = [
@@ -227,6 +230,12 @@ source_set("fml") {
   }
 
   if (is_win) {
+    if (flutter_win7_compatibility) {
+      sources += [
+        "platform/win/win7_wait_on_address.cc",
+        "platform/win/win7_wait_on_address.h",
+      ]
+    }
     sources += [
       "platform/win/command_line_win.cc",
       "platform/win/errors_win.cc",

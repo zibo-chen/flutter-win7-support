@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "checks": {
+    "hostname": {
+      "status": "passed",
+      "detail": "runnervmnjgfq"
+    },
+    "filesystem": {
+      "status": "passed",
+      "detail": "中文读写通过"
+    },
+    "loopback_http": {
+      "status": "passed",
+      "detail": "HTTP/socket/event loop passed"
+    },
+    "isolate_unwind": {
+      "status": "passed",
+      "detail": "isolate/exception/stack passed"
+    },
+    "ffi": {
+      "status": "passed",
+      "detail": {
+        "pid": 1804,
+        "ticks": 155390
+      }
+    }
+  },
+  "os": "\"Windows Server 2022 Datacenter\" 10.0 (Build 20348)",
+  "dart": "3.12.1 (stable) (Sat Oct 31 16:51:39 2026 +0800) on \"windows_x64\"",
+  "first_frame": true,
+  "completed_utc": "2026-10-31T11:34:53.584606Z"
+}

@@ -1,0 +1,53 @@
+{
+  "status": "minimal_app_passed_on_one_win7_machine",
+  "date": "2026-10-31",
+  "os": "Windows 7 Ultimate SP1 x64, 6.1.7601",
+  "gpu": "Intel HD Graphics 3000",
+  "package_run": 41196428941,
+  "package_commit": "59b3acada86baca4d38c04a7e440837603d6d631",
+  "engine_source_run": 41186401142,
+  "engine_source_commit": "7cb7b91d25a4376334ce186fbbc58bd92d4c743d",
+  "dart_commit": "a6ed413da4b5690ec3e05f347af1400170d2a2f3",
+  "artifact_id": 13040743327,
+  "archive_sha256": "88cbe9b960ccbee56c08c3a63de3ab91af92969723ba5e95eda8dce577d27830",
+  "engine_sha256": "7381cfd2f79d9d4fc73ebbb7c1ed53d61581ba17c9ddc4c85ba3065da6eac22c",
+  "runner_crt": "static",
+  "runtime_report": "runtime.json",
+  "visual_review": {
+    "chinese_text": "rendered",
+    "typed_text": "Win7-input-123",
+    "button_count_before": 0,
+    "button_count_after": 1,
+    "before": "before-input.png",
+    "after": "after-input.png"
+  },
+  "exit_code": 0,
+  "forced_close": false,
+  "known_log": "DirectManipulation COM manager unavailable on Win7; basic keyboard/button acceptance passed. Advanced touchpad gestures were not accepted.",
+  "not_accepted": [
+    "Chinese IME composition",
+    "Windows 10/11 physical machines",
+    "camera/recognition/printing or arbitrary native plugins",
+    "long-running stability",
+    "x86",
+    "Win7 development tooling"
+  ],
+  "repeat": {
+    "runtime_report": "repeat-runtime.json",
+    "acceptance_record": "repeat-acceptance.json",
+    "passed": true,
+    "exit_code": 0,
+    "forced_close": false
+  },
+  "modern_windows_regression": {
+    "workflow_run": 41197415312,
+    "workflow_commit": "de157db4cf334b65543930c80d40f3ddf85c6609",
+    "job_id": 124526280480,
+    "os": "Windows Server 2022 Datacenter 10.0 (Build 20348)",
+    "same_artifact": true,
+    "runtime_report": "modern-runtime.json",
+    "first_frame": true,
+    "runtime_checks_passed": true,
+    "normal_exit_code": 0
+  }
+}

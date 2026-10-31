@@ -83,7 +83,19 @@ class UnpackWindows extends Target {
     );
     final Depfile depfile = unpackDesktopArtifacts(
       fileSystem: environment.fileSystem,
-      artifacts: _kWindowsArtifacts,
+      // Export metadata and debug symbols are not required to link or run an
+      // application. A redistributed local engine may omit them. Keep the
+      // downloaded SDK contract and all runtime/link inputs strict.
+      artifacts: _kWindowsArtifacts.where((String artifact) {
+        if (!environment.artifacts.usesLocalArtifacts ||
+            (artifact != 'flutter_windows.dll.exp' && artifact != 'flutter_windows.dll.pdb')) {
+          return true;
+        }
+        return environment.fileSystem.typeSync(
+              environment.fileSystem.path.join(engineSourcePath, artifact),
+            ) !=
+            FileSystemEntityType.notFound;
+      }).toList(),
       engineSourcePath: engineSourcePath,
       outputDirectory: outputDirectory,
       clientSourcePaths: <String>[clientSourcePath],

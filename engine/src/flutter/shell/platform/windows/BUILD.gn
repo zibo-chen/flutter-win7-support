@@ -82,6 +82,7 @@ source_set("flutter_windows_source") {
     "flutter_project_bundle.h",
     "flutter_window.cc",
     "flutter_window.h",
+    "win7_touch_input.h",
     "flutter_windows.cc",
     "flutter_windows_engine.cc",
     "flutter_windows_engine.h",

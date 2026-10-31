@@ -1,0 +1,14 @@
+name: win7_smoke
+description: Windows 7 engine acceptance probe.
+publish_to: none
+version: 0.1.0+1
+environment:
+  sdk: ^3.12.1
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+flutter:
+  uses-material-design: true

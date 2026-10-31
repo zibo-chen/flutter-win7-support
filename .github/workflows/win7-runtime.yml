@@ -1,0 +1,49 @@
+name: Windows runtime regression
+on:
+  push:
+    branches: [medivh/win7-3.44.1]
+    paths: [win7/runtime-request.json]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  runtime:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate application source run
+        id: request
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $request = Get-Content win7/runtime-request.json -Raw | ConvertFrom-Json
+          $source = gh api "repos/${{ github.repository }}/actions/runs/$($request.run_id)" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $source.conclusion -ne 'success' -or $source.head_sha -ne $request.commit) {
+            throw 'Requested app run did not succeed with the expected source'
+          }
+          "run_id=$($request.run_id)" | Out-File $env:GITHUB_OUTPUT -Append
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.request.outputs.run_id }}
+          name: win7-smoke-reused-engine
+          path: app
+      - name: Run the same application on modern Windows
+        shell: pwsh
+        run: |
+          $request = Get-Content win7/runtime-request.json -Raw | ConvertFrom-Json
+          $manifest = Get-Content app/build-manifest.json -Raw | ConvertFrom-Json
+          if ($manifest.framework_checkout_commit -ne $request.commit) { throw 'App manifest mismatch' }
+          foreach ($entry in (Get-Content app/SHA256SUMS.json -Raw | ConvertFrom-Json)) {
+            if ((Get-FileHash (Join-Path app $entry.file) -Algorithm SHA256).Hash -ne $entry.sha256) { throw "Hash mismatch: $($entry.file)" }
+          }
+          .\win7\test-runtime.ps1 -BundleRoot app -ReportDirectory runtime-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modern-windows-runtime-evidence
+          path: runtime-results/
+          if-no-files-found: warn
