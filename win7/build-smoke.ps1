@@ -13,7 +13,8 @@ $config = Get-Content "$FlutterRoot/win7/build-config.json" -Raw | ConvertFrom-J
 $manifest = Get-Content "$EngineOut/build-manifest.json" -Raw | ConvertFrom-Json
 if ($manifest.dart_commit -ne $config.dart_revision -or
     $manifest.flutter_base_commit -ne $config.flutter_base_revision -or
-    $manifest.variant -ne $config.variant) {
+    $manifest.variant -ne $config.variant -or
+    $manifest.target -ne $config.target) {
   throw 'Engine manifest does not match the pinned SDK configuration'
 }
 $env:FLUTTER_SUPPRESS_ANALYTICS = 'true'
@@ -27,6 +28,18 @@ function Checked([string]$Program, [string[]]$Arguments) {
 Checked git @('-C', $FlutterRoot, 'fetch', '--depth=1', 'https://github.com/flutter/flutter.git', "refs/tags/$($config.flutter_version):refs/tags/$($config.flutter_version)")
 $baseRevision = (& git -C $FlutterRoot rev-parse "refs/tags/$($config.flutter_version)^{commit}").Trim()
 if ($baseRevision -ne $config.flutter_base_revision) { throw 'Unexpected upstream Flutter tag' }
+# The raw GN strong_platform target always writes flutter_patched_sdk, with
+# dart.vm.product determined by flutter_runtime_mode. Official release archives
+# publish that directory as flutter_patched_sdk_product; local artifacts expect
+# the published name too. Never alias a debug/profile platform into Release.
+if (!(Test-Path "$EngineOut/flutter_patched_sdk_product/platform_strong.dill")) {
+  $gnArgs = Get-Content "$EngineOut/args.gn" -Raw
+  if ($gnArgs -notmatch 'flutter_runtime_mode\s*=\s*"release"' -or
+      !(Test-Path "$EngineOut/flutter_patched_sdk/platform_strong.dill")) {
+    throw 'Missing matched Release platform kernel'
+  }
+  Copy-Item "$EngineOut/flutter_patched_sdk" "$EngineOut/flutter_patched_sdk_product" -Recurse
+}
 if ($config.variant -eq 'win7-experimental') {
   Checked "$EngineOut/dart-sdk/bin/dart.exe" @("$EngineOut/runtime-probe.dart")
 }
