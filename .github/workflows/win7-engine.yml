@@ -3,11 +3,10 @@ on:
   push:
     branches: [medivh/win7-3.44.1]
     paths:
-      - .github/workflows/win7-engine.yml
       - win7/build-config.json
-      - win7/build-engine.ps1
       - win7/ci-trigger.txt
       - engine/src/build/config/win/**
+      - engine/src/flutter/fml/BUILD.gn
       - engine/src/flutter/fml/platform/win/win7_wait_on_address.*
       - win7/native_wait_test.cc
   workflow_dispatch:

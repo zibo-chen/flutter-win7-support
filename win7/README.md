@@ -73,3 +73,16 @@ wrapper. Artifacts are retained even if a later check fails, and carry
 Before compiling, the pipeline runs the same probe with official Dart and
 checks the native concurrency helper. The upstream Flutter tag is fetched and
 verified so the fork CLI can derive a valid semantic version.
+
+The original-source baseline run `41179006107` also completes all 6534
+compile/link steps. Its app packaging fails because Flutter forbids project
+creation inside the SDK checkout. `build-smoke.ps1` now copies the fixture to
+a short external directory, validates the engine manifest, and runs the
+matched SDK probe before building.
+
+Source builds run automatically for engine-source or pinned-config changes;
+bump `win7/ci-trigger.txt` to request one after build-script changes. Packaging
+can reuse retained SDKs: create/update `win7/package-request.json` with
+`source_run_id`, its full `source_commit`, and a `request_id` to trigger
+`win7-package.yml`. The package job verifies the source run and artifact
+manifest, then builds the app without compiling the engine again.

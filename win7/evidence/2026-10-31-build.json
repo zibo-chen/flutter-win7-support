@@ -16,5 +16,14 @@
     "relative_target_native_backslash": "passes"
   },
   "next_candidate": "Correct fixture to native Windows separators; save complete matched local-engine SDK before acceptance tests; gate source build on official runtime probe.",
-  "compatibility_status": "Full patched Flutter runtime on Win7 remains unverified"
+  "compatibility_status": "Full patched Flutter runtime on Win7 remains unverified",
+  "unmodified_source_baseline": {
+    "workflow_run": 41179006107,
+    "engine_job": 124472367237,
+    "source_commit": "97cb215eadf55b3142efd4ab60c2e3fedb71d89c",
+    "compile_and_link": "passed",
+    "ninja_steps_completed": 6534,
+    "application_packaging": "failed: Flutter refuses project creation inside SDK checkout",
+    "fix": "Build the fixture in a short, disposable directory outside FlutterRoot; package existing compiled SDK separately."
+  }
 }

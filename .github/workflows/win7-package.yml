@@ -1,0 +1,57 @@
+name: Package existing Windows engine
+on:
+  push:
+    branches: [medivh/win7-3.44.1]
+    paths: [win7/package-request.json]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  package:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
+      - name: Read engine artifact request
+        id: request
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $request = Get-Content win7/package-request.json -Raw | ConvertFrom-Json
+          $source = gh api "repos/${{ github.repository }}/actions/runs/$($request.source_run_id)" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $source.status -ne 'completed' -or $source.head_sha -ne $request.source_commit) {
+            throw 'Source run is not terminal or does not match the requested commit'
+          }
+          "run_id=$($request.source_run_id)" | Out-File $env:GITHUB_OUTPUT -Append
+          git config --system core.longpaths true
+          git clone --no-hardlinks --local $env:GITHUB_WORKSPACE C:\f
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          git -C C:\f remote set-url origin https://github.com/${{ github.repository }}.git
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.request.outputs.run_id }}
+          name: engine-acceptance-windows-x64
+          path: C:/engine-artifact
+      - name: Validate and reuse the matched engine SDK
+        shell: pwsh
+        working-directory: C:\f
+        run: |
+          $request = Get-Content win7/package-request.json -Raw | ConvertFrom-Json
+          $sdk = 'C:\engine-artifact\local-engine\host_release'
+          $manifest = Get-Content "$sdk\build-manifest.json" -Raw | ConvertFrom-Json
+          if ($manifest.engine_source_commit -ne $request.source_commit -or $manifest.stage -ne 'compiled_not_accepted') {
+            throw 'Compiled engine artifact does not match its source run'
+          }
+          New-Item -ItemType Directory -Force C:\f\engine\src\out | Out-Null
+          Copy-Item $sdk C:\f\engine\src\out -Recurse
+          .\win7\build-smoke.ps1 -EngineOut C:\f\engine\src\out\host_release -OutputDirectory C:\smoke-output
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win7-smoke-reused-engine
+          path: C:/smoke-output/
+          if-no-files-found: error

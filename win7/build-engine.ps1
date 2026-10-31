@@ -99,32 +99,10 @@ Copy-Item "$root/LICENSE" "$sdkStage/FLUTTER_LICENSE"
 if (Test-Path "$dart/tests/standalone/io/windows_7_compatibility_test.dart") {
   Copy-Item "$dart/tests/standalone/io/windows_7_compatibility_test.dart" "$sdkStage/runtime-probe.dart"
 }
-if ($config.variant -eq 'win7-experimental') {
-  Checked "$out/dart-sdk/bin/dart.exe" @("$dart/tests/standalone/io/windows_7_compatibility_test.dart")
-}
-
-Set-Location $root
-Checked "$root/bin/flutter.bat" @('config', '--no-analytics')
-Checked "$root/bin/flutter.bat" @('--version')
-Checked "$root/bin/flutter.bat" @('create', '--empty', '--platforms=windows', '--project-name=win7_smoke', '--no-pub', 'win7/smoke')
-Set-Location "$root/win7/smoke"
-Checked "$root/bin/flutter.bat" @('pub', 'get')
-Checked "$root/bin/flutter.bat" @('--local-engine-src-path', "$root/engine/src", '--local-engine', 'host_release', '--local-engine-host', 'host_release', 'build', 'windows', '--release')
+Copy-Item "$sdkStage/build-manifest.json" $out
+if (Test-Path "$sdkStage/runtime-probe.dart") { Copy-Item "$sdkStage/runtime-probe.dart" $out }
 $bundle = "$root/win7/output/$($config.variant)-smoke"
-Copy-Item 'build/windows/x64/runner/Release' $bundle -Recurse
-$manifest = [ordered]@{
-  variant = $config.variant
-  flutter_version = $config.flutter_version
-  flutter_commit = (& git -C $root rev-parse HEAD).Trim()
-  dart_commit = $dartRevision
-  dart_base_commit = $config.dart_base_revision
-  depot_tools_commit = $config.depot_tools_revision
-  target = $config.target
-  compatibility_status = 'unverified'
-  build_utc = [DateTime]::UtcNow.ToString('o')
-}
-$manifest | ConvertTo-Json | Set-Content "$bundle/build-manifest.json" -Encoding utf8
-Get-ChildItem $bundle -Recurse -File | Get-FileHash -Algorithm SHA256 | Select-Object Path,Hash | ConvertTo-Json | Set-Content "$bundle/SHA256SUMS.json" -Encoding utf8
+& "$PSScriptRoot/build-smoke.ps1" -FlutterRoot $root -EngineOut $out -OutputDirectory $bundle
 Copy-Item "$root/engine/src/out/host_release/args.gn" "$root/win7/output/args.gn"
 $engineBundle = "$root/win7/output/$($config.variant)-engine"
 New-Item -ItemType Directory -Force $engineBundle | Out-Null

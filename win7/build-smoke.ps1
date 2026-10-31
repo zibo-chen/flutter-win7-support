@@ -1,0 +1,61 @@
+[CmdletBinding()]
+param(
+  [Parameter(Mandatory=$true)][string]$EngineOut,
+  [Parameter(Mandatory=$true)][string]$OutputDirectory,
+  [string]$FlutterRoot = (Split-Path $PSScriptRoot -Parent)
+)
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+$FlutterRoot = [IO.Path]::GetFullPath($FlutterRoot)
+$EngineOut = [IO.Path]::GetFullPath($EngineOut)
+$OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
+$config = Get-Content "$FlutterRoot/win7/build-config.json" -Raw | ConvertFrom-Json
+$manifest = Get-Content "$EngineOut/build-manifest.json" -Raw | ConvertFrom-Json
+if ($manifest.dart_commit -ne $config.dart_revision -or
+    $manifest.flutter_base_commit -ne $config.flutter_base_revision -or
+    $manifest.variant -ne $config.variant) {
+  throw 'Engine manifest does not match the pinned SDK configuration'
+}
+$env:FLUTTER_SUPPRESS_ANALYTICS = 'true'
+
+function Checked([string]$Program, [string[]]$Arguments) {
+  Write-Host "> $Program $($Arguments -join ' ')"
+  & $Program @Arguments
+  if ($LASTEXITCODE -ne 0) { throw "$Program exited $LASTEXITCODE" }
+}
+
+Checked git @('-C', $FlutterRoot, 'fetch', '--depth=1', 'https://github.com/flutter/flutter.git', "refs/tags/$($config.flutter_version):refs/tags/$($config.flutter_version)")
+$baseRevision = (& git -C $FlutterRoot rev-parse "refs/tags/$($config.flutter_version)^{commit}").Trim()
+if ($baseRevision -ne $config.flutter_base_revision) { throw 'Unexpected upstream Flutter tag' }
+if ($config.variant -eq 'win7-experimental') {
+  Checked "$EngineOut/dart-sdk/bin/dart.exe" @("$EngineOut/runtime-probe.dart")
+}
+
+# Flutter refuses to create applications anywhere inside its SDK checkout.
+# Keep the source fixture in Git and create a disposable, short external path.
+$volume = [IO.Path]::GetPathRoot($FlutterRoot)
+$app = Join-Path $volume ('win7-smoke-' + [Guid]::NewGuid().ToString('N').Substring(0,8))
+Copy-Item "$FlutterRoot/win7/smoke" $app -Recurse
+Checked "$FlutterRoot/bin/flutter.bat" @('config', '--no-analytics')
+Checked "$FlutterRoot/bin/flutter.bat" @('--version')
+Checked "$FlutterRoot/bin/flutter.bat" @('create', '--empty', '--platforms=windows', '--project-name=win7_smoke', '--no-pub', $app)
+Set-Location $app
+Checked "$FlutterRoot/bin/flutter.bat" @('pub', 'get')
+$engineSource = Split-Path (Split-Path $EngineOut -Parent) -Parent
+$engineName = Split-Path $EngineOut -Leaf
+Checked "$FlutterRoot/bin/flutter.bat" @('--local-engine-src-path', $engineSource, '--local-engine', $engineName, '--local-engine-host', $engineName, 'build', 'windows', '--release')
+New-Item -ItemType Directory -Force (Split-Path $OutputDirectory -Parent) | Out-Null
+Copy-Item 'build/windows/x64/runner/Release' $OutputDirectory -Recurse
+[ordered]@{
+  variant = $manifest.variant
+  flutter_version = $manifest.flutter_version
+  engine_source_commit = $manifest.engine_source_commit
+  framework_checkout_commit = (& git -C $FlutterRoot rev-parse HEAD).Trim()
+  dart_commit = $manifest.dart_commit
+  target = $manifest.target
+  compatibility_status = 'unverified'
+  build_utc = [DateTime]::UtcNow.ToString('o')
+} | ConvertTo-Json | Set-Content "$OutputDirectory/build-manifest.json" -Encoding utf8
+Get-ChildItem $OutputDirectory -Recurse -File | ForEach-Object {
+  @{ file = $_.FullName.Substring($OutputDirectory.Length).TrimStart([char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)); sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash }
+} | ConvertTo-Json | Set-Content "$OutputDirectory/SHA256SUMS.json" -Encoding utf8
