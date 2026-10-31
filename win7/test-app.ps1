@@ -45,7 +45,7 @@ if (!$Interactive) {
     while (!(Test-Path $marker) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 500 }
     if (!(Test-Path $marker)) { throw 'Interactive acceptance did not produce its report' }
     [Console]::OutputEncoding = [Text.Encoding]::UTF8
-    Get-Content $marker -Raw
+    Get-Content $marker -Raw -Encoding UTF8
   } finally {
     try { $task.Stop(0) } catch {}
     $folder.DeleteTask($taskName,0)
@@ -111,7 +111,7 @@ public static class FlutterWin7Window {
     $process.Refresh()
   }
   $record.runtime_complete = Test-Path $runtimePath
-  if ($record.runtime_complete) { $record.runtime = Get-Content $runtimePath -Raw | ConvertFrom-Json }
+  if ($record.runtime_complete) { $record.runtime = Get-Content $runtimePath -Raw -Encoding UTF8 | ConvertFrom-Json }
   if (!$process.HasExited) {
     $process.Refresh()
     $window = $process.MainWindowHandle
