@@ -25,5 +25,16 @@
     "ninja_steps_completed": 6534,
     "application_packaging": "failed: Flutter refuses project creation inside SDK checkout",
     "fix": "Build the fixture in a short, disposable directory outside FlutterRoot; package existing compiled SDK separately."
+  },
+  "corrected_candidate": {
+    "workflow_run": 41186401142,
+    "source_commit": "7cb7b91d25a4376334ce186fbbc58bd92d4c743d",
+    "dart_commit": "a6ed413da4b5690ec3e05f347af1400170d2a2f3",
+    "engine_compile_and_link": "passed all6611steps",
+    "source_built_dart_probe": "passed on Windows2022",
+    "packaging_failure": "old in-SDK project creation step",
+    "retained_sdk_artifact": 13040132846,
+    "artifact_sha256": "1a7211def4d8b78707de08357a87ab8632a007f3f8b57a4f6263ea6dd649128c",
+    "next": "Package retained SDK with external-project helper"
   }
 }
