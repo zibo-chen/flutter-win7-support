@@ -17,6 +17,7 @@
 #include "flutter/shell/platform/windows/keyboard_manager.h"
 #include "flutter/shell/platform/windows/sequential_id_generator.h"
 #include "flutter/shell/platform/windows/text_input_manager.h"
+#include "flutter/shell/platform/windows/win7_touch_input.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/windows_lifecycle_manager.h"
 #include "flutter/shell/platform/windows/windows_proc_table.h"
@@ -379,8 +380,8 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   // Manages IME state.
   std::unique_ptr<KeyboardManager> keyboard_manager_;
 
-  // Used for temporarily storing the WM_TOUCH-provided touch points.
-  std::vector<TOUCHINPUT> touch_points_;
+  // Windows 7 has WM_TOUCH but no WM_POINTER API.
+  Win7TouchInput legacy_touch_input_;
 
   // Implements IRawElementProviderFragmentRoot when UIA is enabled.
   std::unique_ptr<ui::AXFragmentRootWin> ax_fragment_root_;

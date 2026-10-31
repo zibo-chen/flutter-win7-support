@@ -77,6 +77,15 @@ Windows Server 2022; it does not replace physical Windows 10/11 acceptance.
 
 ## Acceptance limits
 
+The legacy touch path registers the Flutter child view for Win7 `WM_TOUCH`
+when `GetPointerInfo` is absent. It forwards down/move/up contacts with physical
+coordinates and stable IDs, closes each consumed touch handle, and suppresses
+duplicate promoted mouse events. If registration fails, promoted mouse input
+remains available for basic taps. Windows 8+ retains `WM_POINTER`. Native
+regression tests cover routing, multiple contacts, negative/fractional
+coordinates, registration failure and handle ownership. Physical touchscreen
+acceptance of this new path is pending a rebuilt engine on the Win7 device.
+
 The initial scope is Win7 SP1 **x64 release applications** built on newer
 Windows. Win7 development tools and x86 are outside this scope. Chinese IME
 composition, advanced touchpad gestures, long-running stability, physical

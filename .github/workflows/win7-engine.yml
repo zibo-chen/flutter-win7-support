@@ -9,6 +9,10 @@ on:
       - engine/src/flutter/fml/BUILD.gn
       - engine/src/flutter/fml/platform/win/win7_wait_on_address.*
       - win7/native_wait_test.cc
+      - win7/native_touch_test.cc
+      - engine/src/flutter/shell/platform/windows/flutter_window.*
+      - engine/src/flutter/shell/platform/windows/win7_touch_input.h
+      - engine/src/flutter/shell/platform/windows/BUILD.gn
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,10 +35,14 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           & .\win7\native-output\native_wait_test.exe
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cl /nologo /EHsc /std:c++17 /MT /D_WIN32_WINNT=0x0601 /Iengine/src win7/native_touch_test.cc /Fewin7/native-output/native_touch_test.exe /link user32.lib
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & .\win7\native-output\native_touch_test.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with:
           name: native-wait-compat-windows-x64
-          path: win7/native-output/native_wait_test.exe
+          path: win7/native-output/*.exe
           if-no-files-found: error
   stock-smoke:
     runs-on: windows-2022

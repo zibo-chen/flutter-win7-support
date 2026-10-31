@@ -37,7 +37,11 @@ static constexpr int32_t kDefaultPointerDeviceId = 0;
 // input.
 // See
 // https://docs.microsoft.com/en-us/windows/win32/tablet/system-events-and-mouse-messages?redirectedfrom=MSDN#distinguishing-pen-input-from-mouse-and-touch.
-static FlutterPointerDeviceKind GetFlutterPointerDeviceKind() {
+static FlutterPointerDeviceKind GetFlutterPointerDeviceKind(
+    bool filter_promoted_mouse) {
+  if (!filter_promoted_mouse) {
+    return kFlutterPointerDeviceKindMouse;
+  }
   constexpr LPARAM kTouchOrPenSignature = 0xFF515700;
   constexpr LPARAM kTouchSignature = kTouchOrPenSignature | 0x80;
   constexpr LPARAM kSignatureMask = 0xFFFFFF00;
@@ -434,6 +438,7 @@ void FlutterWindow::InitializeChild(const char* title,
     OutputDebugString(message);
     LocalFree(message);
   }
+  legacy_touch_input_.Initialize(result);
   SetUserObjectInformationA(GetCurrentProcess(),
                             UOI_TIMERPROC_EXCEPTION_SUPPRESSION, FALSE, 1);
   // SetTimer is not precise, if a 16 ms interval is requested, it will instead
@@ -541,6 +546,34 @@ FlutterWindow::HandleMessage(UINT const message,
     case WM_PAINT:
       OnPaint();
       break;
+    case WM_TOUCH:
+      if (legacy_touch_input_.Handle(
+              wparam, lparam, [this](const Win7TouchInput::Contact& contact) {
+                auto touch_id = touch_id_generator_.GetGeneratedId(contact.id);
+                switch (contact.action) {
+                  case Win7TouchInput::Action::kDown:
+                    OnPointerDown(contact.x, contact.y,
+                                  kFlutterPointerDeviceKindTouch, touch_id,
+                                  WM_LBUTTONDOWN, 0, 0);
+                    break;
+                  case Win7TouchInput::Action::kMove:
+                    OnPointerMove(contact.x, contact.y,
+                                  kFlutterPointerDeviceKindTouch, touch_id, 0,
+                                  0, 0);
+                    break;
+                  case Win7TouchInput::Action::kUp:
+                    OnPointerUp(contact.x, contact.y,
+                                kFlutterPointerDeviceKindTouch, touch_id,
+                                WM_LBUTTONUP);
+                    OnPointerLeave(contact.x, contact.y,
+                                   kFlutterPointerDeviceKindTouch, touch_id);
+                    touch_id_generator_.ReleaseNumber(contact.id);
+                    break;
+                }
+              })) {
+        return 0;
+      }
+      break;
     case WM_POINTERDOWN:
     case WM_POINTERUPDATE:
     case WM_POINTERUP:
@@ -599,7 +632,8 @@ FlutterWindow::HandleMessage(UINT const message,
       break;
     }
     case WM_MOUSEMOVE:
-      device_kind = GetFlutterPointerDeviceKind();
+      device_kind = GetFlutterPointerDeviceKind(
+          legacy_touch_input_.FiltersPromotedMouse());
       if (device_kind == kFlutterPointerDeviceKindMouse) {
         TrackMouseLeaveEvent(window_handle_);
 
@@ -620,7 +654,8 @@ FlutterWindow::HandleMessage(UINT const message,
       }
       break;
     case WM_MOUSELEAVE:
-      device_kind = GetFlutterPointerDeviceKind();
+      device_kind = GetFlutterPointerDeviceKind(
+          legacy_touch_input_.FiltersPromotedMouse());
       if (device_kind == kFlutterPointerDeviceKindMouse) {
         OnPointerLeave(mouse_x_, mouse_y_, device_kind,
                        kDefaultPointerDeviceId);
@@ -652,7 +687,8 @@ FlutterWindow::HandleMessage(UINT const message,
     case WM_RBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_XBUTTONDOWN:
-      device_kind = GetFlutterPointerDeviceKind();
+      device_kind = GetFlutterPointerDeviceKind(
+          legacy_touch_input_.FiltersPromotedMouse());
       if (device_kind != kFlutterPointerDeviceKindMouse) {
         break;
       }
@@ -679,7 +715,8 @@ FlutterWindow::HandleMessage(UINT const message,
     case WM_RBUTTONUP:
     case WM_MBUTTONUP:
     case WM_XBUTTONUP:
-      device_kind = GetFlutterPointerDeviceKind();
+      device_kind = GetFlutterPointerDeviceKind(
+          legacy_touch_input_.FiltersPromotedMouse());
       if (device_kind != kFlutterPointerDeviceKindMouse) {
         break;
       }
@@ -945,6 +982,7 @@ LRESULT FlutterWindow::Win32DefWindowProc(HWND hWnd,
 }
 
 void FlutterWindow::Destroy() {
+  legacy_touch_input_.Reset();
   if (window_handle_) {
     text_input_manager_->SetWindowHandle(nullptr);
     DestroyWindow(window_handle_);
