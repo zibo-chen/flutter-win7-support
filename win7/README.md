@@ -1,99 +1,87 @@
 # Flutter 3.44.1 Windows 7 compatibility
 
-This branch starts at official Flutter `3.44.1`. Windows 7 compatibility is
-experimental and **not yet validated**. The initial baseline builds an
-unmodified engine control. The current config builds the first compatibility
-candidate; it is not a supported compatibility release.
+This branch starts at official Flutter **3.44.1**, with the matched Dart
+3.12.1 runtime/compiler built from source. A release-mode minimal application
+has passed first-frame, runtime and keyboard/button acceptance on one Windows 7
+SP1 x64 machine. This remains an experimental fork, not a general compatibility
+release or business-app acceptance.
 
-Scope: Windows 7 SP1 **x64**, release-mode applications. Build on Windows 10/11
-with Visual Studio 2022. Windows 7 development tooling, x86, and other platforms
-are outside the initial acceptance scope.
+[中文使用说明](USAGE.zh-CN.md)
 
-`build-config.json` pins Flutter's base, a companion Dart commit and depot_tools.
-The Dart checkout is overridden through gclient custom_deps; the rest of the
-upstream dependency revisions are retained. GitHub Actions builds the engine
-and Dart from source and creates a smoke app using that same engine. The stock
-Flutter artifact is an independent negative control. Source changes are kept on
-`medivh/win7-3.44.1`; the fork's default branch remains an upstream reference.
+## Verified result
 
-## Initial acceptance
+On Windows 7 Ultimate SP1 x64 / Intel HD Graphics 3000:
 
-1. Build the original engine and smoke app on Windows 2022 CI.
-2. Record stock and source-build behavior on Win7.
-3. Add independently reviewable compatibility changes to Flutter and Dart.
-4. Verify window rendering, input, Unicode file I/O, hostname, socket/HTTP,
-   isolates/exceptions, and native FFI on Win7, then regress Win10/11.
-5. Integrate Medivh native libraries and real camera/recognition paths separately.
+- The compatibility engine loads with PE subsystem 6.1.
+- The real application renders its first frame and Chinese UI text.
+- Hostname, Unicode file I/O, loopback HTTP/socket, isolate exception stacks,
+  and native FFI probes pass.
+- Keyboard text `Win7-input-123` appears and the button count changes from 0 to 1.
+- The application closes normally with exit code 0. A second launch with the
+  UTF-8 report reader also passes all runtime checks and closes normally.
 
-Set `MEDIVH_WIN7_REPORT` to an absolute JSON output path before launching
-`win7_smoke.exe`. A report is written only after a first-frame callback and the
-runtime probes complete. The window remains open for visual/input acceptance.
-The report does not prove keyboard/IME, printer, camera, or recognition acceptance.
+[Runtime and visual evidence](evidence/2026-10-31-win7/acceptance.json),
+[before input](evidence/2026-10-31-win7/before-input.png),
+[after input](evidence/2026-10-31-win7/after-input.png).
+
+The exact app is from [package run 41196428941](https://github.com/zibo-chen/flutter-win7-support/actions/runs/41196428941),
+artifact `13040743327`. Its archive SHA-256 is
+`88cbe9b960ccbee56c08c3a63de3ab91af92969723ba5e95eda8dce577d27830`.
+The engine is from source run `41186401142`, commit
+`7cb7b91d25a4376334ce186fbbc58bd92d4c743d`; the companion Dart revision is
+`a6ed413da4b5690ec3e05f347af1400170d2a2f3`.
+
+The unmodified Flutter 3.44.1 control fails on the same Win7 machine with
+`0xC0000139`, no first frame and loader error 127. The native address-wait
+component separately passes ten consecutive Win7 runs and Windows CI.
+See [control records](evidence/2026-10-31-controls.json).
+
+## Source and build
+
+`build-config.json` pins Flutter's base, the companion Dart commit and
+`depot_tools`. gclient custom_deps selects the Dart fork while retaining the
+other upstream dependency revisions. Source changes live on
+`medivh/win7-3.44.1`; the default branch remains an upstream reference.
 
 The companion Dart source is maintained at
 <https://github.com/zibo-chen/dart-sdk-win7-support/tree/medivh/win7-flutter-3.44.1>.
-The opt-in GN argument `flutter_win7_compatibility=true` sets PE subsystem 6.1
-and supplies native address-wait fallbacks for static MSVC library imports.
-The normal engine configuration is unchanged. The standalone native test
-exercises fallback timeouts, sizes, eight waiting threads and STL atomic wait.
+It resolves newer Windows hostname, stack, unwind-table and PathCch APIs at
+runtime and provides Win7 fallbacks. The opt-in GN argument
+`flutter_win7_compatibility=true` sets PE subsystem 6.1 and provides native
+address-wait fallbacks for static MSVC imports, including direct and import
+pointer calls. Normal engine configuration is unchanged.
 
-Unknown build variants fail. Manifests label compatibility as `unverified`
-until actual Win7 acceptance. Never relabel a stock engine as a compatible one.
+GitHub Actions builds on Windows 2022 / Visual Studio 2022 and preserves the
+matched local-engine SDK before acceptance probes. Unknown build variants fail.
+The saved manifest says `compiled_not_accepted`; acceptance evidence is recorded
+separately for an exact artifact and machine. The official-Dart runtime probe,
+native concurrency helper and stock smoke tests gate source compilation.
 
-## Recorded control result (2026-10-31)
+Source builds trigger on engine-source/config changes; `win7/ci-trigger.txt`
+can request another. `win7-package.yml` reuses a saved SDK after validating its
+source run/manifest. `package-request.json` chooses that run and full source
+commit. The builder uses a short external app directory and static C++ runtime
+for the minimal runner. New SDK archives include shader headers and optional
+export/debug metadata. Older SDKs may recover shader headers only if their Git
+tree matches the recorded source commit. Local-engine unpacking permits missing
+`.exp`/`.pdb`; DLL/import-library inputs and downloaded SDK validation remain
+strict, covered by targeted Flutter tools tests.
 
-The stock Flutter 3.44.1 x64 smoke app, built by Actions run `41178761812`,
-fails to launch on Windows 7 SP1 x64 / Intel HD Graphics 3000. The process exits
-with `0xC0000139` and no first-frame/runtime report. The engine DLL advertises
-PE subsystem 10.0 and LoadLibrary reports error 127.
+`win7-runtime.yml` runs the exact accepted app on a newer Windows CI host,
+validates file hashes and records a first-frame/runtime report. That CI host is
+Windows Server 2022; it does not replace physical Windows 10/11 acceptance.
 
-Comparing its named imports with exports available on that machine identified:
-`GetHostNameW`, PathCch APIs, growable function tables,
-`GetCurrentThreadStackLimits`, `WaitOnAddress`, and `WakeByAddressSingle`.
-Ordinal imports were excluded from this comparison. This establishes the
-negative control only; source-build and patched-engine results are pending.
+## Acceptance limits
 
-The native address-wait executable from run `41180227958` passes on Windows
-2022 CI and on the Win7 machine for 10 consecutive runs, all with exit code 0.
-This validates that component only; the full Flutter engine remains pending.
-See [recorded controls](evidence/2026-10-31-controls.json) for hashes and limits.
+The initial scope is Win7 SP1 **x64 release applications** built on newer
+Windows. Win7 development tools and x86 are outside this scope. Chinese IME
+composition, advanced touchpad gestures, long-running stability, physical
+Windows 10/11, arbitrary plugins and camera/recognition/printer integration
+remain separate acceptance work. Win7 logs that the DirectManipulation COM
+manager is unavailable; the verified keyboard/button interaction still works.
 
-## Source build and runtime probe
-
-Run `41180227958` completes all 6611 compilation/link steps for the patched
-engine and source-built Dart. Its later relative-link probe fails with errno
-123. Official Dart control run `41186016069` reproduces this for `../中文` and
-passes for the native Windows target `..\中文`; the test fixture is corrected.
-
-The build now saves `output/local-engine/host_release` before acceptance probes,
-including the matched Dart SDK, patched platform SDK, compiler, headers and
-wrapper. Artifacts are retained even if a later check fails, and carry
-`compiled_not_accepted` metadata. Runtime acceptance remains mandatory.
-
-Before compiling, the pipeline runs the same probe with official Dart and
-checks the native concurrency helper. The upstream Flutter tag is fetched and
-verified so the fork CLI can derive a valid semantic version.
-
-The original-source baseline run `41179006107` also completes all 6534
-compile/link steps. Its app packaging fails because Flutter forbids project
-creation inside the SDK checkout. `build-smoke.ps1` now copies the fixture to
-a short external directory, validates the engine manifest, and runs the
-matched SDK probe before building.
-
-Source builds run automatically for engine-source or pinned-config changes;
-bump `win7/ci-trigger.txt` to request one after build-script changes. Packaging
-can reuse retained SDKs: create/update `win7/package-request.json` with
-`source_run_id`, its full `source_commit`, and a `request_id` to trigger
-`win7-package.yml`. The package job verifies the source run and artifact
-manifest, then builds the app without compiling the engine again.
-
-Run `41186401142` also passes the complete probe with the source-built Dart
-3.12.1 SDK and retains the compiled engine. Application packaging uses that
-matched SDK; a successful compile alone does not establish Win7 compatibility.
-
-Redistributed local engines may omit the DLL's `.exp` export metadata and
-`.pdb` debug symbols. The Windows unpack target accepts their absence only
-with local artifacts. The DLL, import library, headers and ICU data remain
-required, and downloaded SDK validation stays strict. New source archives
-retain these metadata files when available. Targeted tests cover the optional
-local metadata and required runtime/link files.
+Set `MEDIVH_WIN7_REPORT` to an absolute JSON path to record the first frame and
+runtime probes. `test-app.ps1` uses an existing interactive session, captures
+only the app window, sends input only while it is foreground, closes its own
+process and removes its temporary task. Screenshots require visual inspection;
+a PNG file or `input_attempted` flag alone is not proof of interaction.

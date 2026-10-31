@@ -54,8 +54,7 @@
     ]
   },
   "limitations": [
-    "Full source-built engine baseline still building",
-    "Complete patched Flutter application still building; no positive first-frame proof yet",
-    "Keyboard/IME, graphics performance, camera, recognition, printing and arbitrary plugins not accepted"
+    "Full patched minimal app now has separate positive Win7 evidence in 2026-10-31-win7/acceptance.json",
+    "Business apps, arbitrary plugins, IME, physical Windows 10/11 and long-running stability remain unaccepted"
   ]
 }
