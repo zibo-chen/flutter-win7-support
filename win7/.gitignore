@@ -1,0 +1,6 @@
+output/
+smoke/build/
+smoke/.dart_tool/
+smoke/coverage/
+smoke/windows/
+smoke/.metadata

@@ -1,0 +1,75 @@
+name: Windows 7 engine acceptance
+on:
+  push:
+    branches: [medivh/win7-3.44.1]
+    paths:
+      - .github/workflows/win7-engine.yml
+      - win7/build-config.json
+      - win7/build-engine.ps1
+      - win7/ci-trigger.txt
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stock-smoke:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+      - name: Create, test, and build stock control
+        shell: pwsh
+        run: |
+          flutter create --empty --platforms=windows --project-name=win7_smoke --no-pub win7/smoke
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Set-Location win7/smoke
+          flutter pub get
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          flutter test --coverage
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          flutter build windows --release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stock-smoke-windows-x64
+          path: win7/smoke/build/windows/x64/runner/Release/
+          if-no-files-found: error
+  engine:
+    runs-on: windows-2022
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
+      - name: Prepare short source path
+        shell: pwsh
+        run: |
+          git config --system core.longpaths true
+          git clone --no-hardlinks --local $env:GITHUB_WORKSPACE C:\f
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          git -C C:\f remote set-url origin https://github.com/${{ github.repository }}.git
+          'FLUTTER_WIN7_SOURCE=C:\f' | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Build pinned engine and acceptance app
+        shell: pwsh
+        working-directory: C:\f
+        run: .\win7\build-engine.ps1
+      - name: Upload engine and application
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-acceptance-windows-x64
+          path: C:/f/win7/output/
+          if-no-files-found: error
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-build-diagnostics
+          path: |
+            C:/f/engine/src/out/host_release/args.gn
+            C:/f/engine/src/out/host_release/.ninja_log
+            C:/f/win7/build-config.json
+          if-no-files-found: ignore
