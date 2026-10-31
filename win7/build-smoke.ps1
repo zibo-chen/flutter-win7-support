@@ -43,7 +43,7 @@ Set-Location $app
 Checked "$FlutterRoot/bin/flutter.bat" @('pub', 'get')
 $engineSource = Split-Path (Split-Path $EngineOut -Parent) -Parent
 $engineName = Split-Path $EngineOut -Leaf
-Checked "$FlutterRoot/bin/flutter.bat" @('--local-engine-src-path', $engineSource, '--local-engine', $engineName, '--local-engine-host', $engineName, 'build', 'windows', '--release')
+Checked "$FlutterRoot/bin/flutter.bat" @('--verbose', '--local-engine-src-path', $engineSource, '--local-engine', $engineName, '--local-engine-host', $engineName, 'build', 'windows', '--release')
 New-Item -ItemType Directory -Force (Split-Path $OutputDirectory -Parent) | Out-Null
 Copy-Item 'build/windows/x64/runner/Release' $OutputDirectory -Recurse
 [ordered]@{
