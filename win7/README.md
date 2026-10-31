@@ -57,3 +57,19 @@ The native address-wait executable from run `41180227958` passes on Windows
 2022 CI and on the Win7 machine for 10 consecutive runs, all with exit code 0.
 This validates that component only; the full Flutter engine remains pending.
 See [recorded controls](evidence/2026-10-31-controls.json) for hashes and limits.
+
+## Source build and runtime probe
+
+Run `41180227958` completes all 6611 compilation/link steps for the patched
+engine and source-built Dart. Its later relative-link probe fails with errno
+123. Official Dart control run `41186016069` reproduces this for `../中文` and
+passes for the native Windows target `..\中文`; the test fixture is corrected.
+
+The build now saves `output/local-engine/host_release` before acceptance probes,
+including the matched Dart SDK, patched platform SDK, compiler, headers and
+wrapper. Artifacts are retained even if a later check fails, and carry
+`compiled_not_accepted` metadata. Runtime acceptance remains mandatory.
+
+Before compiling, the pipeline runs the same probe with official Dart and
+checks the native concurrency helper. The upstream Flutter tag is fetched and
+verified so the fork CLI can derive a valid semantic version.
